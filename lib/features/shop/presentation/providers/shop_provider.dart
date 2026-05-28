@@ -18,7 +18,7 @@ part 'shop_provider.g.dart';
 // Note: These must match AppTheme.name exactly because the app uses name as ID.
 // In a real app, you might map 'Earthy' -> 'chain_reaction_earthy'.
 const String kCoffeeId = 'support_coffee';
-const Set<String> kThemeIds = {'Earthy', 'Pastel', 'Amoled'};
+const Set<String> kThemeIds = {'Earthy', 'Pastel', 'Amoled', 'Photo Orbs'};
 const String _androidPublisherApiKey = String.fromEnvironment(
   'ANDROID_PUBLISHER_API_KEY',
 );

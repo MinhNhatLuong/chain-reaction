@@ -1,14 +1,20 @@
 import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:chain_reaction/core/constants/app_dimensions.dart';
 import 'package:chain_reaction/core/presentation/widgets/edit_player_dialog.dart';
 import 'package:chain_reaction/core/presentation/widgets/pill_button.dart';
 import 'package:chain_reaction/core/presentation/widgets/responsive_container.dart';
+import 'package:chain_reaction/core/theme/app_theme.dart';
 import 'package:chain_reaction/core/theme/providers/theme_provider.dart';
 import 'package:chain_reaction/core/utils/fluid_dialog.dart';
 import 'package:chain_reaction/features/game/presentation/providers/player_names_provider.dart';
+import 'package:chain_reaction/features/settings/presentation/providers/custom_atom_images_provider.dart';
+import 'package:chain_reaction/features/settings/presentation/screens/atom_image_crop_screen.dart';
 import 'package:chain_reaction/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -18,6 +24,10 @@ class SettingsScreen extends ConsumerWidget {
     final themeState = ref.watch(themeProvider);
     final themeNotifier = ref.read(themeProvider.notifier);
     final playerNamesState = ref.watch(playerNamesProvider);
+    final atomImageState = ref.watch(customAtomImagesProvider);
+    final isCustomAtomImagesUnlocked = ref.watch(
+      isCustomAtomImagesUnlockedProvider,
+    );
     final l10n = AppLocalizations.of(context)!;
 
     return ColoredBox(
@@ -123,6 +133,20 @@ class SettingsScreen extends ConsumerWidget {
                     Divider(color: themeState.border, thickness: 1),
                     const SizedBox(height: AppDimensions.paddingXL),
 
+                    _buildSectionHeader('CUSTOM ORB IMAGES', themeState),
+                    const SizedBox(height: AppDimensions.paddingL),
+                    _buildCustomAtomImagesSection(
+                      context: context,
+                      ref: ref,
+                      theme: themeState,
+                      imageState: atomImageState,
+                      isUnlocked: isCustomAtomImagesUnlocked,
+                    ),
+
+                    const SizedBox(height: AppDimensions.paddingXL),
+                    Divider(color: themeState.border, thickness: 1),
+                    const SizedBox(height: AppDimensions.paddingXL),
+
                     _buildSectionHeader(l10n.playerSettingsHeader, themeState),
                     const SizedBox(height: AppDimensions.paddingL),
 
@@ -155,6 +179,9 @@ class SettingsScreen extends ConsumerWidget {
                       onTap: () async {
                         // Reset player names
                         ref.read(playerNamesProvider.notifier).resetNames();
+                        await ref
+                            .read(customAtomImagesProvider.notifier)
+                            .clearImages();
                         // Reset all app settings (theme, visuals)
                         await ref.read(themeProvider.notifier).resetSettings();
                       },
@@ -170,6 +197,197 @@ class SettingsScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildCustomAtomImagesSection({
+    required BuildContext context,
+    required WidgetRef ref,
+    required ThemeState theme,
+    required CustomAtomImagesState imageState,
+    required bool isUnlocked,
+  }) {
+    return Opacity(
+      opacity: isUnlocked ? 1 : 0.42,
+      child: IgnorePointer(
+        ignoring: !isUnlocked,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isUnlocked)
+              Padding(
+                padding: const EdgeInsets.only(
+                  bottom: AppDimensions.paddingM,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.lock,
+                      color: theme.subtitle,
+                      size: AppDimensions.iconS,
+                    ),
+                    const SizedBox(width: AppDimensions.paddingS),
+                    Expanded(
+                      child: Text(
+                        'Buy the ${AppThemes.photoOrbs.name} theme to unlock custom orb images.',
+                        style: TextStyle(
+                          color: theme.subtitle,
+                          fontSize: AppDimensions.fontS,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Row(
+              children: List.generate(kCustomAtomImageSlotCount, (index) {
+                return Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      right: index == kCustomAtomImageSlotCount - 1
+                          ? 0
+                          : AppDimensions.paddingS,
+                    ),
+                    child: _buildAtomImageSlot(
+                      context: context,
+                      ref: ref,
+                      theme: theme,
+                      index: index,
+                      imageBytes: imageState.imageAt(index),
+                    ),
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: AppDimensions.paddingM),
+            PillButton(
+              text: 'Clear orb images',
+              onTap: imageState.hasAnyImage
+                  ? () {
+                      unawaited(
+                        ref
+                            .read(customAtomImagesProvider.notifier)
+                            .clearImages(),
+                      );
+                    }
+                  : null,
+              width: double.infinity,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAtomImageSlot({
+    required BuildContext context,
+    required WidgetRef ref,
+    required ThemeState theme,
+    required int index,
+    required Uint8List? imageBytes,
+  }) {
+    return Semantics(
+      button: true,
+      label: 'Choose image for orb ${index + 1}',
+      child: InkWell(
+        onTap: () {
+          unawaited(_pickAndCropAtomImage(context, ref, index));
+        },
+        borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: theme.surface,
+              border: Border.all(color: theme.border),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (imageBytes == null)
+                    Center(
+                      child: Icon(
+                        Icons.add_photo_alternate_outlined,
+                        color: theme.subtitle,
+                        size: AppDimensions.iconL,
+                      ),
+                    )
+                  else
+                    Image.memory(imageBytes, fit: BoxFit.cover),
+                  Positioned(
+                    left: AppDimensions.paddingS,
+                    top: AppDimensions.paddingS,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: theme.bg.withValues(alpha: 0.78),
+                        shape: BoxShape.circle,
+                      ),
+                      child: SizedBox.square(
+                        dimension: 24,
+                        child: Center(
+                          child: Text(
+                            '${index + 1}',
+                            style: TextStyle(
+                              color: theme.fg,
+                              fontSize: AppDimensions.fontXS,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndCropAtomImage(
+    BuildContext context,
+    WidgetRef ref,
+    int index,
+  ) async {
+    final notifier = ref.read(customAtomImagesProvider.notifier);
+    final picker = ImagePicker();
+
+    XFile? pickedFile;
+    try {
+      pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 92,
+      );
+    } on Object {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open image picker.')),
+      );
+      return;
+    }
+
+    if (pickedFile == null) return;
+
+    final imageBytes = await pickedFile.readAsBytes();
+    if (!context.mounted) return;
+
+    final croppedBytes = await Navigator.of(context).push<Uint8List>(
+      MaterialPageRoute(
+        builder: (_) => AtomImageCropScreen(
+          imageBytes: imageBytes,
+          slotNumber: index + 1,
+        ),
+      ),
+    );
+
+    if (croppedBytes == null) return;
+    await notifier.setImage(index, croppedBytes);
   }
 
   Widget _buildSectionHeader(String title, ThemeState theme) {

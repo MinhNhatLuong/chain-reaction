@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - "main"
-    tags:
-      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -95,7 +93,7 @@ jobs:
   release:
     name: Create Release
     needs: [build_android, build_windows]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -109,6 +107,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
           draft: false
           prerelease: false
           files: |

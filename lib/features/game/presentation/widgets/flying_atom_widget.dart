@@ -1,7 +1,9 @@
 import 'package:chain_reaction/features/game/domain/entities/flying_atom.dart';
+import 'package:chain_reaction/features/settings/presentation/providers/custom_atom_images_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class FlyingAtomWidget extends StatefulWidget {
+class FlyingAtomWidget extends ConsumerStatefulWidget {
   const FlyingAtomWidget({
     required this.atom,
     required this.cellSize,
@@ -13,10 +15,10 @@ class FlyingAtomWidget extends StatefulWidget {
   final Duration duration;
 
   @override
-  State<FlyingAtomWidget> createState() => _FlyingAtomWidgetState();
+  ConsumerState<FlyingAtomWidget> createState() => _FlyingAtomWidgetState();
 }
 
-class _FlyingAtomWidgetState extends State<FlyingAtomWidget>
+class _FlyingAtomWidgetState extends ConsumerState<FlyingAtomWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _positionAnimation;
@@ -60,6 +62,11 @@ class _FlyingAtomWidgetState extends State<FlyingAtomWidget>
 
   @override
   Widget build(BuildContext context) {
+    final isUnlocked = ref.watch(isCustomAtomImagesUnlockedProvider);
+    final atomImageBytes = isUnlocked
+        ? ref.watch(customAtomImagesProvider).imageAt(0)
+        : null;
+
     // Calculate orb size based on cell size (same scaling as AtomPainter)
     final smallerDimension = widget.cellSize.width < widget.cellSize.height
         ? widget.cellSize.width
@@ -97,11 +104,13 @@ class _FlyingAtomWidgetState extends State<FlyingAtomWidget>
           ],
         ),
         clipBehavior: Clip.antiAlias,
-        child: Image.asset(
-          'assets/ImageA.jpg',
-          fit: BoxFit.cover,
-          opacity: const AlwaysStoppedAnimation(0.48),
-        ),
+        child: atomImageBytes == null
+            ? null
+            : Image.memory(
+                atomImageBytes,
+                fit: BoxFit.cover,
+                opacity: const AlwaysStoppedAnimation(0.48),
+              ),
       ),
     );
   }

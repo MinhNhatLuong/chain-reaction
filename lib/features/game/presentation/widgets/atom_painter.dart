@@ -22,7 +22,7 @@ class AtomPainter extends CustomPainter {
 
   final Color color;
   final int count;
-  final List<ui.Image>? atomImages;
+  final List<ui.Image?>? atomImages;
   final bool isUnstable; // Exploding
   final bool isCritical; // Full
   final bool isRotationOn;

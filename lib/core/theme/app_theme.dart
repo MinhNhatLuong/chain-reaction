@@ -169,6 +169,29 @@ class AppThemes {
     price: r'$0.99',
   );
 
+  static const AppTheme photoOrbs = AppTheme(
+    name: 'Photo Orbs',
+    bgDark: Color(0xFF101214),
+    bgLight: Color(0xFFF7F9FB),
+    fgDark: Color(0xFFF0F6F7),
+    fgLight: Color(0xFF172023),
+    red: Color(0xFFE34F5F),
+    green: Color(0xFF42A66B),
+    yellow: Color(0xFFEBCB4B),
+    blue: Color(0xFF438FE3),
+    purple: Color(0xFF9A6ADB),
+    aqua: Color(0xFF32B7B5),
+    orange: Color(0xFFEE8A3A),
+    isPremium: true,
+    price: r'$0.99',
+  );
+
   /// List of all available themes.
-  static const List<AppTheme> all = [defaultTheme, earthy, pastel, amoled];
+  static const List<AppTheme> all = [
+    defaultTheme,
+    earthy,
+    pastel,
+    amoled,
+    photoOrbs,
+  ];
 }
