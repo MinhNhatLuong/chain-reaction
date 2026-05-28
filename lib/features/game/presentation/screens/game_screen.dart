@@ -271,8 +271,9 @@ class _GamePlayArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const scoreAreaHeight = 56;
     const gridGap = AppDimensions.paddingS;
+    const scoreAreaHeight = 56.0;
+    final hasScore = gameState.activeOwnerIds.isNotEmpty;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -290,10 +291,25 @@ class _GamePlayArea extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                GameScoreBar(
-                  gameState: gameState,
-                  foregroundColor: foregroundColor,
-                  borderColor: borderColor,
+                SizedBox(
+                  height: scoreAreaHeight,
+                  child: AnimatedSlide(
+                    offset: hasScore ? Offset.zero : const Offset(0, -0.16),
+                    duration: const Duration(milliseconds: 240),
+                    curve: Curves.easeOutCubic,
+                    child: AnimatedOpacity(
+                      opacity: hasScore ? 1 : 0,
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      child: hasScore
+                          ? GameScoreBar(
+                              gameState: gameState,
+                              foregroundColor: foregroundColor,
+                              borderColor: borderColor,
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: gridGap),
                 SizedBox(

@@ -24,6 +24,16 @@ class GameScoreBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final occupiedSquares = _occupiedSquares;
+    if (occupiedSquares == 0) return const SizedBox.shrink();
+    final segments = [
+      for (var index = 0; index < gameState.players.length; index++)
+        _ScoreSegmentData(
+          color: Color(gameState.players[index].color),
+          count: gameState.cellCountForPlayer(gameState.players[index].id),
+        ),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -39,21 +49,29 @@ class GameScoreBar extends StatelessWidget {
             ),
             child: SizedBox(
               height: 34,
-              child: Row(
-                children: [
-                  for (var index = 0; index < gameState.players.length; index++)
-                    Expanded(
-                      child: _ScoreSegment(
-                        color: Color(gameState.players[index].color),
-                        count: gameState.cellCountForPlayer(
-                          gameState.players[index].id,
-                        ),
-                        isCurrent:
-                            index == gameState.currentPlayerIndex &&
-                            !gameState.isGameOver,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  var leadingRatio = 0.0;
+                  final positionedSegments = <Widget>[];
+
+                  for (final segment in segments) {
+                    final ratio = segment.count / occupiedSquares;
+                    positionedSegments.add(
+                      _AnimatedScoreSegment(
+                        color: segment.color,
+                        count: segment.count,
+                        left: constraints.maxWidth * leadingRatio,
+                        width: constraints.maxWidth * ratio,
                       ),
-                    ),
-                ],
+                    );
+                    leadingRatio += ratio;
+                  }
+
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: positionedSegments,
+                  );
+                },
               ),
             ),
           ),
@@ -62,7 +80,7 @@ class GameScoreBar extends StatelessWidget {
         Align(
           alignment: Alignment.centerRight,
           child: Text(
-            'Total Squares: $_occupiedSquares/${gameState.totalCells}',
+            'Total Squares: $occupiedSquares/${gameState.totalCells}',
             style: TextStyle(
               color: foregroundColor.withValues(alpha: 0.72),
               fontSize: AppDimensions.fontXS,
@@ -76,62 +94,61 @@ class GameScoreBar extends StatelessWidget {
   }
 }
 
-class _ScoreSegment extends StatelessWidget {
-  const _ScoreSegment({
+class _ScoreSegmentData {
+  const _ScoreSegmentData({
     required this.color,
     required this.count,
-    required this.isCurrent,
   });
 
   final Color color;
   final int count;
-  final bool isCurrent;
+}
 
-  Color get _textColor {
-    return color.computeLuminance() > 0.48 ? Colors.black : Colors.white;
-  }
+class _AnimatedScoreSegment extends StatelessWidget {
+  const _AnimatedScoreSegment({
+    required this.color,
+    required this.count,
+    required this.left,
+    required this.width,
+  });
+
+  final Color color;
+  final int count;
+  final double left;
+  final double width;
 
   @override
   Widget build(BuildContext context) {
-    final textColor = _textColor;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: color,
-        boxShadow: isCurrent
-            ? [
-                BoxShadow(
-                  color: textColor.withValues(alpha: 0.32),
-                  spreadRadius: 2,
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+      left: left,
+      width: width,
+      top: 0,
+      bottom: 0,
+      child: Semantics(
+        label: '$count squares',
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: color,
+          ),
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.paddingXS,
                 ),
-              ]
-            : null,
-      ),
-      child: Center(
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.paddingXS,
-            ),
-            child: Text(
-              '$count',
-              maxLines: 1,
-              style: TextStyle(
-                color: textColor,
-                fontSize: AppDimensions.fontM,
-                fontWeight: FontWeight.w800,
-                height: 1,
-                shadows: [
-                  Shadow(
-                    color:
-                        (textColor == Colors.white
-                                ? Colors.black
-                                : Colors.white)
-                            .withValues(alpha: 0.22),
-                    blurRadius: 2,
+                child: Text(
+                  '$count',
+                  maxLines: 1,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: AppDimensions.fontM,
+                    fontWeight: FontWeight.w800,
+                    height: 1,
                   ),
-                ],
+                ),
               ),
             ),
           ),

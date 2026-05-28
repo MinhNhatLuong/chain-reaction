@@ -65,7 +65,3 @@ flutter_native_splash:
 flutter:
   generate: true
   uses-material-design: true
-  assets:
-    - assets/ImageA.jpg
-    - assets/ImageB.jpg
-    - assets/ImageC.jpg
