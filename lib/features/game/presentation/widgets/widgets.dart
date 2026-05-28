@@ -6,3 +6,4 @@ library;
 export 'atom_widget.dart';
 export 'cell_widget.dart';
 export 'game_grid.dart';
+export 'game_score_bar.dart';

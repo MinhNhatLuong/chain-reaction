@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:chain_reaction/core/constants/app_dimensions.dart';
 import 'package:chain_reaction/core/presentation/widgets/game_menu_dialog.dart';
@@ -187,8 +188,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             body: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(AppDimensions.gridPadding),
-                child: RepaintBoundary(
-                  child: GameGrid(onCellTap: _handleCellTap),
+                child: _GamePlayArea(
+                  gameState: gameState,
+                  foregroundColor: themeState.fg,
+                  borderColor: themeState.border,
+                  onCellTap: _handleCellTap,
                 ),
               ),
             ),
@@ -248,6 +252,62 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           aiDifficulty: widget.aiDifficulty ?? aiPlayer?.difficulty,
         ),
       ),
+    );
+  }
+}
+
+class _GamePlayArea extends StatelessWidget {
+  const _GamePlayArea({
+    required this.gameState,
+    required this.foregroundColor,
+    required this.borderColor,
+    required this.onCellTap,
+  });
+
+  final GameState gameState;
+  final Color foregroundColor;
+  final Color borderColor;
+  final void Function(int x, int y) onCellTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const scoreAreaHeight = 56;
+    const gridGap = AppDimensions.paddingS;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxGridHeight = math.max(
+          0,
+          constraints.maxHeight - scoreAreaHeight - gridGap,
+        );
+        final widthFromHeight = maxGridHeight * gameState.cols / gameState.rows;
+        final gridWidth = math.min(constraints.maxWidth, widthFromHeight);
+        final gridHeight = gridWidth * gameState.rows / gameState.cols;
+
+        return Center(
+          child: SizedBox(
+            width: gridWidth,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GameScoreBar(
+                  gameState: gameState,
+                  foregroundColor: foregroundColor,
+                  borderColor: borderColor,
+                ),
+                const SizedBox(height: gridGap),
+                SizedBox(
+                  width: gridWidth,
+                  height: gridHeight,
+                  child: RepaintBoundary(
+                    child: GameGrid(onCellTap: onCellTap),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
