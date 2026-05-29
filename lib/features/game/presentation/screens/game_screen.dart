@@ -191,7 +191,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 child: _GamePlayArea(
                   gameState: gameState,
                   foregroundColor: themeState.fg,
-                  borderColor: themeState.border,
                   onCellTap: _handleCellTap,
                 ),
               ),
@@ -260,13 +259,11 @@ class _GamePlayArea extends StatelessWidget {
   const _GamePlayArea({
     required this.gameState,
     required this.foregroundColor,
-    required this.borderColor,
     required this.onCellTap,
   });
 
   final GameState gameState;
   final Color foregroundColor;
-  final Color borderColor;
   final void Function(int x, int y) onCellTap;
 
   @override
@@ -305,7 +302,6 @@ class _GamePlayArea extends StatelessWidget {
                           ? GameScoreBar(
                               gameState: gameState,
                               foregroundColor: foregroundColor,
-                              borderColor: borderColor,
                             )
                           : const SizedBox.shrink(),
                     ),
