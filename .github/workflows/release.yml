@@ -42,15 +42,37 @@ jobs:
           
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Configure Android signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storeFile=upload-keystore.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
         
       - name: Build APKs
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi --build-number ${{ github.run_number }}
         
       - name: Rename APKs
         run: |
           mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk chain_reaction_android_arm.apk
           mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk chain_reaction_android_arm64.apk
           mv build/app/outputs/flutter-apk/app-x86_64-release.apk chain_reaction_android_x64.apk
+
+      - name: Generate checksums
+        run: sha256sum chain_reaction_android_arm.apk chain_reaction_android_arm64.apk chain_reaction_android_x64.apk > checksums.txt
         
       - name: Upload APKs
         uses: actions/upload-artifact@v4
@@ -60,6 +82,7 @@ jobs:
             chain_reaction_android_arm.apk
             chain_reaction_android_arm64.apk
             chain_reaction_android_x64.apk
+            checksums.txt
 
   build_windows:
     name: Build Windows
@@ -113,5 +136,6 @@ jobs:
           prerelease: false
           files: |
             chain_reaction_android_apks/*.apk
+            chain_reaction_android_apks/checksums.txt
             chain_reaction_windows/chain_reaction_windows.zip
           generate_release_notes: true

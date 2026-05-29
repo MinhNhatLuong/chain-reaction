@@ -10,21 +10,50 @@ import 'package:chain_reaction/core/theme/providers/theme_provider.dart';
 import 'package:chain_reaction/core/utils/fluid_dialog.dart';
 import 'package:chain_reaction/features/game/presentation/providers/player_names_provider.dart';
 import 'package:chain_reaction/features/settings/presentation/providers/custom_atom_images_provider.dart';
+import 'package:chain_reaction/features/settings/presentation/providers/update_provider.dart';
 import 'package:chain_reaction/features/settings/presentation/screens/atom_image_crop_screen.dart';
 import 'package:chain_reaction/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(
+        ref.read(appUpdateProvider.notifier).continueAfterPermission(),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeState = ref.watch(themeProvider);
     final themeNotifier = ref.read(themeProvider.notifier);
     final playerNamesState = ref.watch(playerNamesProvider);
     final atomImageState = ref.watch(customAtomImagesProvider);
+    final updateState = ref.watch(appUpdateProvider);
     final isCustomAtomImagesUnlocked = ref.watch(
       isCustomAtomImagesUnlockedProvider,
     );
@@ -85,6 +114,18 @@ class SettingsScreen extends ConsumerWidget {
                       onChanged: themeNotifier.setHapticOn,
                       theme: themeState,
                       l10n: l10n,
+                    ),
+
+                    const SizedBox(height: AppDimensions.paddingXL),
+                    Divider(color: themeState.border, thickness: 1),
+                    const SizedBox(height: AppDimensions.paddingXL),
+
+                    _buildSectionHeader('APP UPDATE', themeState),
+                    const SizedBox(height: AppDimensions.paddingL),
+                    _buildUpdateSection(
+                      ref: ref,
+                      theme: themeState,
+                      state: updateState,
                     ),
 
                     const SizedBox(height: AppDimensions.paddingXL),
@@ -197,6 +238,130 @@ class SettingsScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildUpdateSection({
+    required WidgetRef ref,
+    required ThemeState theme,
+    required AppUpdateState state,
+  }) {
+    final availability = state.availability;
+    final latestBuild = availability?.release.buildNumber;
+    final asset = availability?.apkAsset;
+    final progress = state.downloadProgress;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (availability != null) ...[
+          Text(
+            'Latest build: $latestBuild',
+            style: TextStyle(
+              color: theme.fg,
+              fontSize: AppDimensions.fontM,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.paddingXS),
+          Text(
+            '${asset?.name ?? 'Android APK'} - ${_formatBytes(asset?.size ?? 0)}',
+            style: TextStyle(
+              color: theme.subtitle,
+              fontSize: AppDimensions.fontS,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.paddingM),
+        ],
+        if (state.message != null) ...[
+          Text(
+            state.message!,
+            style: TextStyle(
+              color: _isUpdateErrorState(state.status)
+                  ? theme.currentTheme.red
+                  : theme.subtitle,
+              fontSize: AppDimensions.fontS,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.paddingM),
+        ],
+        if (progress != null) ...[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusS),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: theme.border,
+              valueColor: AlwaysStoppedAnimation<Color>(theme.fg),
+            ),
+          ),
+          const SizedBox(height: AppDimensions.paddingM),
+        ],
+        Row(
+          children: [
+            Expanded(
+              child: PillButton(
+                text: state.status == AppUpdateStatus.checking
+                    ? 'Checking...'
+                    : 'Check for update',
+                onTap: state.isBusy
+                    ? null
+                    : () {
+                        unawaited(
+                          ref
+                              .read(appUpdateProvider.notifier)
+                              .checkForUpdate(),
+                        );
+                      },
+              ),
+            ),
+            if (state.hasAvailableUpdate) ...[
+              const SizedBox(width: AppDimensions.paddingM),
+              Expanded(
+                child: PillButton(
+                  text: _updateButtonText(state),
+                  type: PillButtonType.primary,
+                  onTap: state.isBusy
+                      ? null
+                      : () {
+                          unawaited(
+                            ref.read(appUpdateProvider.notifier).update(),
+                          );
+                        },
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+
+  String _updateButtonText(AppUpdateState state) {
+    return switch (state.status) {
+      AppUpdateStatus.permissionRequired => 'Grant permission',
+      AppUpdateStatus.downloading => 'Downloading...',
+      AppUpdateStatus.installing => 'Installing...',
+      _ => 'Update',
+    };
+  }
+
+  bool _isUpdateErrorState(AppUpdateStatus status) {
+    return status == AppUpdateStatus.error;
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes <= 0) return 'Unknown size';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    var size = bytes.toDouble();
+    var unitIndex = 0;
+
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+
+    final precision = unitIndex == 0 || size >= 10 ? 0 : 1;
+    return '${size.toStringAsFixed(precision)} ${units[unitIndex]}';
   }
 
   Widget _buildCustomAtomImagesSection({
