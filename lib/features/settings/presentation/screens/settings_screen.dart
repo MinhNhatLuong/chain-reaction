@@ -120,7 +120,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     Divider(color: themeState.border, thickness: 1),
                     const SizedBox(height: AppDimensions.paddingXL),
 
-                    _buildSectionHeader('APP UPDATE', themeState),
+                    _buildSectionHeader('UPDATE CENTER', themeState),
                     const SizedBox(height: AppDimensions.paddingL),
                     _buildUpdateSection(
                       ref: ref,
