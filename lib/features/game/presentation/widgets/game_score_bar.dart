@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:chain_reaction/core/constants/app_dimensions.dart';
 import 'package:chain_reaction/features/game/domain/entities/game_state.dart';
 import 'package:flutter/material.dart';
@@ -108,7 +110,7 @@ class _AnimatedScoreTrackState extends State<_AnimatedScoreTrack>
 
     _startLayouts = _currentLayouts;
     _targetLayouts = nextLayouts;
-    _controller.forward(from: 0);
+    unawaited(_controller.forward(from: 0));
   }
 
   @override
