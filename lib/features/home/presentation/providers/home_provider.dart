@@ -34,20 +34,7 @@ abstract class HomeState with _$HomeState {
 
   String get currentGridSize => gridSizes[gridSizeIndex];
 
-  String get difficultyLabel {
-    switch (aiDifficulty) {
-      case AIDifficulty.easy:
-        return 'Easy';
-      case AIDifficulty.medium:
-        return 'Medium';
-      case AIDifficulty.hard:
-        return 'Hard';
-      case AIDifficulty.extreme:
-        return 'Extreme';
-      case AIDifficulty.god:
-        return 'God';
-    }
-  }
+  String get difficultyLabel => aiDifficulty.label;
 }
 
 @riverpod
