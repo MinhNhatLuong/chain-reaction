@@ -21,11 +21,9 @@ class HomeModeSelection extends ConsumerWidget {
       children: [
         GameSelector(
           label: l10n.gameModeLabel,
-          value: state.selectedMode == GameMode.localMultiplayer
-              ? l10n.localMultiplayer
-              : l10n.vsComputer,
-          onPrevious: notifier.toggleMode,
-          onNext: notifier.toggleMode,
+          value: _modeLabel(state.selectedMode, l10n),
+          onPrevious: () => notifier.cycleMode(forward: false),
+          onNext: () => notifier.cycleMode(forward: true),
         ),
         const SizedBox(height: AppDimensions.paddingXL),
         // Invisible GameSelector placeholder to match HomeConfiguration exactly
@@ -48,5 +46,16 @@ class HomeModeSelection extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  String _modeLabel(GameMode mode, AppLocalizations l10n) {
+    switch (mode) {
+      case GameMode.localMultiplayer:
+        return l10n.localMultiplayer;
+      case GameMode.vsComputer:
+        return l10n.vsComputer;
+      case GameMode.training:
+        return 'Training';
+    }
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:chain_reaction/core/constants/app_dimensions.dart';
 import 'package:chain_reaction/features/game/domain/entities/cell.dart';
 import 'package:chain_reaction/features/game/presentation/widgets/atom_widget.dart';
@@ -19,6 +21,8 @@ class CellWidget extends StatelessWidget {
     this.isAtomBreathingOn = true,
     this.isCellHighlightOn = true,
     this.isKeyboardSelected = false,
+    this.isSuggestedMove = false,
+    this.suggestionColor = const Color(0xFFFFD54F),
     this.semanticLabel,
     this.semanticHint,
   });
@@ -31,6 +35,8 @@ class CellWidget extends StatelessWidget {
   final bool isAtomBreathingOn;
   final bool isCellHighlightOn;
   final bool isKeyboardSelected;
+  final bool isSuggestedMove;
+  final Color suggestionColor;
   final Animation<double> animation;
   final double angleOffset;
   final String? semanticLabel;
@@ -42,13 +48,6 @@ class CellWidget extends StatelessWidget {
     // This keeps full cells (Critical Mass) running at the stable speed
     final isUnstable = cell.atomCount > cell.capacity;
     final isCritical = cell.atomCount == cell.capacity;
-    final effectiveBorderColor = isKeyboardSelected
-        ? borderColor
-        : borderColor.withValues(alpha: AppDimensions.gridBorderOpacity);
-    final effectiveBorderWidth = isKeyboardSelected
-        ? AppDimensions.gridBorderWidth * 2
-        : AppDimensions.gridBorderWidth;
-
     return Expanded(
       child: Semantics(
         button: true,
@@ -61,47 +60,70 @@ class CellWidget extends StatelessWidget {
               final isMobile =
                   !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
-              final childContainer = LayoutBuilder(
-                builder: (context, constraints) {
-                  // Use the smaller dimension for atom sizing
-                  final cellSize = constraints.maxWidth < constraints.maxHeight
-                      ? constraints.maxWidth
-                      : constraints.maxHeight;
+              final childContainer = AnimatedBuilder(
+                animation: animation,
+                builder: (context, _) {
+                  final pulse =
+                      0.35 +
+                      0.65 *
+                          ((math.sin(animation.value * 2 * math.pi) + 1) / 2);
+                  final effectiveBorderColor = isSuggestedMove
+                      ? suggestionColor.withValues(alpha: pulse)
+                      : isKeyboardSelected
+                      ? borderColor
+                      : borderColor.withValues(
+                          alpha: AppDimensions.gridBorderOpacity,
+                        );
+                  final effectiveBorderWidth = isSuggestedMove
+                      ? AppDimensions.gridBorderWidth * 4
+                      : isKeyboardSelected
+                      ? AppDimensions.gridBorderWidth * 2
+                      : AppDimensions.gridBorderWidth;
 
-                  return AnimatedContainer(
-                    duration: const Duration(
-                      milliseconds: AppDimensions.cellAnimationDurationMs,
-                    ),
-                    curve: Curves.easeOut,
-                    decoration: BoxDecoration(
-                      color: (isCellHighlightOn && cell.ownerId != null)
-                          ? cellColor.withValues(
-                              alpha: AppDimensions.cellHighlightOpacity,
-                            )
-                          : Colors.transparent,
-                      border: Border.all(
-                        color: effectiveBorderColor,
-                        width: effectiveBorderWidth,
-                      ),
-                    ),
-                    child: Center(
-                      child: AtomWidget(
-                        color: cellColor,
-                        // Visually cap the atoms to capacity to prevent "overloaded" shapes
-                        // (e.g. 4 atoms in a 3-capacity cell) from appearing briefly before explosion.
-                        count: cell.atomCount > cell.capacity
-                            ? cell.capacity
-                            : cell.atomCount,
-                        isUnstable: isUnstable,
-                        isCritical: isCritical,
-                        isAtomRotationOn: isAtomRotationOn,
-                        isAtomVibrationOn: isAtomVibrationOn,
-                        isAtomBreathingOn: isAtomBreathingOn,
-                        animation: animation,
-                        angleOffset: angleOffset,
-                        cellSize: cellSize,
-                      ),
-                    ),
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Use the smaller dimension for atom sizing
+                      final cellSize =
+                          constraints.maxWidth < constraints.maxHeight
+                          ? constraints.maxWidth
+                          : constraints.maxHeight;
+
+                      return AnimatedContainer(
+                        duration: const Duration(
+                          milliseconds: AppDimensions.cellAnimationDurationMs,
+                        ),
+                        curve: Curves.easeOut,
+                        decoration: BoxDecoration(
+                          color: (isCellHighlightOn && cell.ownerId != null)
+                              ? cellColor.withValues(
+                                  alpha: AppDimensions.cellHighlightOpacity,
+                                )
+                              : Colors.transparent,
+                          border: Border.all(
+                            color: effectiveBorderColor,
+                            width: effectiveBorderWidth,
+                          ),
+                        ),
+                        child: Center(
+                          child: AtomWidget(
+                            color: cellColor,
+                            // Visually cap the atoms to capacity to prevent "overloaded" shapes
+                            // (e.g. 4 atoms in a 3-capacity cell) from appearing briefly before explosion.
+                            count: cell.atomCount > cell.capacity
+                                ? cell.capacity
+                                : cell.atomCount,
+                            isUnstable: isUnstable,
+                            isCritical: isCritical,
+                            isAtomRotationOn: isAtomRotationOn,
+                            isAtomVibrationOn: isAtomVibrationOn,
+                            isAtomBreathingOn: isAtomBreathingOn,
+                            animation: animation,
+                            angleOffset: angleOffset,
+                            cellSize: cellSize,
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               );

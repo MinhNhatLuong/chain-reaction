@@ -23,11 +23,13 @@ class GameScreen extends ConsumerStatefulWidget {
     this.gridSize,
     this.aiDifficulty,
     this.isResuming = false,
+    this.isTrainingMode = false,
   });
   final int? playerCount;
   final String? gridSize;
   final AIDifficulty? aiDifficulty;
   final bool isResuming;
+  final bool isTrainingMode;
 
   @override
   ConsumerState<GameScreen> createState() => _GameScreenState();
@@ -81,7 +83,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     ref
         .read(gameProvider.notifier)
-        .initGame(players, gridSize: widget.gridSize);
+        .initGame(
+          players,
+          gridSize: widget.gridSize,
+          isTrainingMode: widget.isTrainingMode,
+        );
   }
 
   void _handleCellTap(int x, int y) {
@@ -227,6 +233,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     widget.gridSize ??
                     AppLocalizations.of(context)!.unknownGrid,
                 'aiDifficulty': widget.aiDifficulty ?? aiPlayer?.difficulty,
+                'isTrainingMode': next.isTrainingMode,
               },
             );
           }
@@ -249,6 +256,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           playerCount: gameState.players.length,
           gridSize: widget.gridSize ?? 'medium',
           aiDifficulty: widget.aiDifficulty ?? aiPlayer?.difficulty,
+          isTrainingMode: gameState.isTrainingMode,
         ),
       ),
     );

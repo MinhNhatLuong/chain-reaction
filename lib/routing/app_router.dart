@@ -35,6 +35,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final gridSize = extras?['gridSize'] as String?;
           final aiDifficulty = extras?['aiDifficulty'] as AIDifficulty?;
           final isResuming = extras?['isResuming'] as bool? ?? false;
+          final isTrainingMode = extras?['isTrainingMode'] as bool? ?? false;
 
           return _fadeTransition(
             context,
@@ -44,6 +45,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               gridSize: gridSize,
               aiDifficulty: aiDifficulty,
               isResuming: isResuming,
+              isTrainingMode: isTrainingMode,
             ),
           );
         },
@@ -62,6 +64,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final playerCount = extras?['playerCount'] as int? ?? 2;
           final gridSize = extras?['gridSize'] as String? ?? 'medium';
           final aiDifficulty = extras?['aiDifficulty'] as AIDifficulty?;
+          final isTrainingMode = extras?['isTrainingMode'] as bool? ?? false;
 
           return _fadeTransition(
             context,
@@ -75,6 +78,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               playerCount: playerCount,
               gridSize: gridSize,
               aiDifficulty: aiDifficulty,
+              isTrainingMode: isTrainingMode,
             ),
           );
         },

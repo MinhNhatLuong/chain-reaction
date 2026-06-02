@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:chain_reaction/core/errors/domain_exceptions.dart';
@@ -106,14 +107,27 @@ class FakeSettingsRepository implements SettingsRepository {
 
 class FakeAIService implements AIService {
   bool shouldFail = false;
+  Duration delay = Duration.zero;
+  Point<int> aiMove = const Point(1, 0);
+  Point<int> hintMove = const Point(0, 0);
+  AIDifficulty? lastAiDifficulty;
+  AIDifficulty? lastHintDifficulty;
 
   @override
   Future<Point<int>> getMove(GameState state, Player player) async {
+    if (delay > Duration.zero) {
+      await Future<void>.delayed(delay);
+    }
     if (shouldFail) {
       throw const AIException('Simulated AI Failure');
     }
+    if (!player.isAI) {
+      lastHintDifficulty = player.difficulty;
+      return hintMove;
+    }
+    lastAiDifficulty = player.difficulty;
     // Return a dummy move (1, 0) -> x=1, y=0 -> grid[0][1]
-    return const Point(1, 0);
+    return aiMove;
   }
 }
 
@@ -187,6 +201,23 @@ void main() {
       expect(restored.currentPlayer.id, '1');
     });
 
+    test('GameState legacy JSON defaults training mode to false', () {
+      final players = [
+        Player(id: '1', name: 'P1', color: 0xFF000000),
+        Player(id: '2', name: 'P2', color: 0xFFFFFFFF),
+      ];
+      final state = container
+          .read(gameRulesProvider)
+          .initializeGame(players, gridSize: 'small', isTrainingMode: true);
+      final json =
+          jsonDecode(jsonEncode(state.toJson())) as Map<String, dynamic>
+            ..remove('isTrainingMode');
+
+      final restored = GameState.fromJson(json);
+
+      expect(restored.isTrainingMode, isFalse);
+    });
+
     test('initGame creates a valid GameState', () {
       final notifier = container.read(gameProvider.notifier);
       final players = [
@@ -206,6 +237,83 @@ void main() {
       // Verify persistence
       expect(fakeRepository.savedState, isNotNull);
     });
+
+    test('Training init stores mode and computes opening hint', () async {
+      final notifier = container.read(gameProvider.notifier);
+      final players = [
+        Player(id: '1', name: 'P1', color: 0xFF000000),
+        Player(
+          id: '2',
+          name: 'Computer',
+          color: 0xFFFFFFFF,
+          type: PlayerType.ai,
+          difficulty: AIDifficulty.medium,
+        ),
+      ];
+
+      notifier.initGame(players, gridSize: 'small', isTrainingMode: true);
+      await Future<void>.delayed(Duration.zero);
+
+      final state = container.read<GameState?>(gameProvider);
+      expect(state, isNotNull);
+      expect(state!.isTrainingMode, isTrue);
+      expect(container.read(trainingSuggestedMoveProvider), const Point(0, 0));
+      expect(fakeAIService.lastHintDifficulty, AIDifficulty.god);
+      expect(fakeRepository.savedState!.isTrainingMode, isTrue);
+    });
+
+    test('Training clears hint on move and recomputes after AI turn', () async {
+      final notifier = container.read(gameProvider.notifier);
+      final players = [
+        Player(id: '1', name: 'P1', color: 0xFF000000),
+        Player(
+          id: '2',
+          name: 'Computer',
+          color: 0xFFFFFFFF,
+          type: PlayerType.ai,
+          difficulty: AIDifficulty.medium,
+        ),
+      ];
+
+      notifier.initGame(players, isTrainingMode: true);
+      await Future<void>.delayed(Duration.zero);
+      expect(container.read(trainingSuggestedMoveProvider), const Point(0, 0));
+
+      notifier.placeAtom(0, 0);
+      expect(container.read(trainingSuggestedMoveProvider), isNull);
+
+      await Future<void>.delayed(aiDelay);
+      expect(container.read<GameState?>(gameProvider)!.currentPlayer.id, '1');
+      expect(container.read(trainingSuggestedMoveProvider), const Point(0, 0));
+      expect(fakeAIService.lastAiDifficulty, AIDifficulty.medium);
+      expect(fakeAIService.lastHintDifficulty, AIDifficulty.god);
+    });
+
+    test(
+      'Training ignores stale hint if user moves before it returns',
+      () async {
+        final notifier = container.read(gameProvider.notifier);
+        fakeAIService.delay = const Duration(milliseconds: 80);
+        final players = [
+          Player(id: '1', name: 'P1', color: 0xFF000000),
+          Player(
+            id: '2',
+            name: 'Computer',
+            color: 0xFFFFFFFF,
+            type: PlayerType.ai,
+            difficulty: AIDifficulty.extreme,
+          ),
+        ];
+
+        notifier
+          ..initGame(players, isTrainingMode: true)
+          ..placeAtom(1, 0);
+
+        await Future<void>.delayed(const Duration(milliseconds: 120));
+
+        expect(container.read(trainingSuggestedMoveProvider), isNull);
+      },
+    );
 
     test('placeAtom updates state', () async {
       final notifier = container.read(gameProvider.notifier);

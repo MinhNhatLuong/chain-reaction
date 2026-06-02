@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:chain_reaction/core/services/haptic/haptic_service.dart';
 import 'package:chain_reaction/features/game/domain/ai/ai_service.dart';
 import 'package:chain_reaction/features/game/domain/entities/game_state.dart';
+import 'package:chain_reaction/features/game/domain/entities/player.dart';
 import 'package:chain_reaction/features/game/domain/repositories/game_repository.dart';
 import 'package:chain_reaction/features/game/presentation/providers/providers.dart';
 import 'package:chain_reaction/features/game/presentation/screens/game_screen.dart';
@@ -128,6 +129,49 @@ void main() {
     // Instead, we just check if it's there.
     expect(find.byType(GameGrid), findsOneWidget);
   });
+
+  testWidgets(
+    'Training GameScreen keeps selected AI difficulty with hint mode',
+    (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            settingsRepositoryProvider.overrideWithValue(
+              MockSettingsRepository(),
+            ),
+            hapticServiceProvider.overrideWithValue(MockHapticService()),
+            gameRepositoryProvider.overrideWithValue(FakeGameRepository()),
+            aiServiceProvider.overrideWithValue(MockAIService()),
+          ],
+          child: const MaterialApp(
+            home: GameScreen(
+              playerCount: 2,
+              gridSize: 'Small',
+              aiDifficulty: AIDifficulty.hard,
+              isTrainingMode: true,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final context = tester.element(find.byType(GameScreen));
+      final container = ProviderScope.containerOf(context);
+      final gameState = container.read<GameState?>(gameProvider);
+
+      expect(gameState, isNotNull);
+      expect(gameState!.isTrainingMode, isTrue);
+      expect(gameState.players.length, 2);
+      expect(gameState.players[0].type, PlayerType.human);
+      expect(gameState.players[1].type, PlayerType.ai);
+      expect(gameState.players[1].difficulty, AIDifficulty.hard);
+      expect(container.read(trainingSuggestedMoveProvider), const Point(0, 0));
+    },
+  );
 
   testWidgets('Tapping a cell calls placeAtom', (tester) async {
     // We need a real GameNotifier to verify logic or a Spy.

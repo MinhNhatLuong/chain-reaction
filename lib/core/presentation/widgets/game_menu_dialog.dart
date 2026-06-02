@@ -16,10 +16,12 @@ class GameMenuDialog extends ConsumerWidget {
     required this.gridSize,
     super.key,
     this.aiDifficulty,
+    this.isTrainingMode = false,
   });
   final int playerCount;
   final String gridSize;
   final AIDifficulty? aiDifficulty;
+  final bool isTrainingMode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -51,8 +53,7 @@ class GameMenuDialog extends ConsumerWidget {
           PillButton(
             text: l10n.newGame,
             onTap: () {
-              final navigator = Navigator.of(context)
-              ..pop();
+              final navigator = Navigator.of(context)..pop();
               unawaited(
                 navigator.pushReplacement(
                   MaterialPageRoute<void>(
@@ -60,6 +61,7 @@ class GameMenuDialog extends ConsumerWidget {
                       playerCount: playerCount,
                       gridSize: gridSize,
                       aiDifficulty: aiDifficulty,
+                      isTrainingMode: isTrainingMode,
                     ),
                   ),
                 ),

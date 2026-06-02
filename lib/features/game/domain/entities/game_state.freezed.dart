@@ -17,7 +17,8 @@ mixin _$GameState {
 
  List<List<Cell>> get grid; List<Player> get players;/// When the game started (for duration calculation).
  DateTime get startTime; List<FlyingAtom> get flyingAtoms; int get currentPlayerIndex; bool get isGameOver; Player? get winner;/// Flag to block input during chain explosions.
- bool get isProcessing;/// Number of turns elapsed.
+ bool get isProcessing;/// Enables training suggestions for human turns.
+ bool get isTrainingMode;/// Number of turns elapsed.
  int get turnCount;/// Total number of moves made by all players.
  int get totalMoves;/// When the game ended (for duration calculation).
  DateTime? get endTime;
@@ -33,12 +34,12 @@ $GameStateCopyWith<GameState> get copyWith => _$GameStateCopyWithImpl<GameState>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is GameState&&const DeepCollectionEquality().equals(other.grid, grid)&&const DeepCollectionEquality().equals(other.players, players)&&(identical(other.startTime, startTime) || other.startTime == startTime)&&const DeepCollectionEquality().equals(other.flyingAtoms, flyingAtoms)&&(identical(other.currentPlayerIndex, currentPlayerIndex) || other.currentPlayerIndex == currentPlayerIndex)&&(identical(other.isGameOver, isGameOver) || other.isGameOver == isGameOver)&&(identical(other.winner, winner) || other.winner == winner)&&(identical(other.isProcessing, isProcessing) || other.isProcessing == isProcessing)&&(identical(other.turnCount, turnCount) || other.turnCount == turnCount)&&(identical(other.totalMoves, totalMoves) || other.totalMoves == totalMoves)&&(identical(other.endTime, endTime) || other.endTime == endTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GameState&&const DeepCollectionEquality().equals(other.grid, grid)&&const DeepCollectionEquality().equals(other.players, players)&&(identical(other.startTime, startTime) || other.startTime == startTime)&&const DeepCollectionEquality().equals(other.flyingAtoms, flyingAtoms)&&(identical(other.currentPlayerIndex, currentPlayerIndex) || other.currentPlayerIndex == currentPlayerIndex)&&(identical(other.isGameOver, isGameOver) || other.isGameOver == isGameOver)&&(identical(other.winner, winner) || other.winner == winner)&&(identical(other.isProcessing, isProcessing) || other.isProcessing == isProcessing)&&(identical(other.isTrainingMode, isTrainingMode) || other.isTrainingMode == isTrainingMode)&&(identical(other.turnCount, turnCount) || other.turnCount == turnCount)&&(identical(other.totalMoves, totalMoves) || other.totalMoves == totalMoves)&&(identical(other.endTime, endTime) || other.endTime == endTime));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(grid),const DeepCollectionEquality().hash(players),startTime,const DeepCollectionEquality().hash(flyingAtoms),currentPlayerIndex,isGameOver,winner,isProcessing,turnCount,totalMoves,endTime);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(grid),const DeepCollectionEquality().hash(players),startTime,const DeepCollectionEquality().hash(flyingAtoms),currentPlayerIndex,isGameOver,winner,isProcessing,isTrainingMode,turnCount,totalMoves,endTime);
 
 
 
@@ -49,7 +50,7 @@ abstract mixin class $GameStateCopyWith<$Res>  {
   factory $GameStateCopyWith(GameState value, $Res Function(GameState) _then) = _$GameStateCopyWithImpl;
 @useResult
 $Res call({
- List<List<Cell>> grid, List<Player> players, DateTime startTime, List<FlyingAtom> flyingAtoms, int currentPlayerIndex, bool isGameOver, Player? winner, bool isProcessing, int turnCount, int totalMoves, DateTime? endTime
+ List<List<Cell>> grid, List<Player> players, DateTime startTime, List<FlyingAtom> flyingAtoms, int currentPlayerIndex, bool isGameOver, Player? winner, bool isProcessing, bool isTrainingMode, int turnCount, int totalMoves, DateTime? endTime
 });
 
 
@@ -66,7 +67,7 @@ class _$GameStateCopyWithImpl<$Res>
 
 /// Create a copy of GameState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? grid = null,Object? players = null,Object? startTime = null,Object? flyingAtoms = null,Object? currentPlayerIndex = null,Object? isGameOver = null,Object? winner = freezed,Object? isProcessing = null,Object? turnCount = null,Object? totalMoves = null,Object? endTime = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? grid = null,Object? players = null,Object? startTime = null,Object? flyingAtoms = null,Object? currentPlayerIndex = null,Object? isGameOver = null,Object? winner = freezed,Object? isProcessing = null,Object? isTrainingMode = null,Object? turnCount = null,Object? totalMoves = null,Object? endTime = freezed,}) {
   return _then(_self.copyWith(
 grid: null == grid ? _self.grid : grid // ignore: cast_nullable_to_non_nullable
 as List<List<Cell>>,players: null == players ? _self.players : players // ignore: cast_nullable_to_non_nullable
@@ -76,6 +77,7 @@ as List<FlyingAtom>,currentPlayerIndex: null == currentPlayerIndex ? _self.curre
 as int,isGameOver: null == isGameOver ? _self.isGameOver : isGameOver // ignore: cast_nullable_to_non_nullable
 as bool,winner: freezed == winner ? _self.winner : winner // ignore: cast_nullable_to_non_nullable
 as Player?,isProcessing: null == isProcessing ? _self.isProcessing : isProcessing // ignore: cast_nullable_to_non_nullable
+as bool,isTrainingMode: null == isTrainingMode ? _self.isTrainingMode : isTrainingMode // ignore: cast_nullable_to_non_nullable
 as bool,turnCount: null == turnCount ? _self.turnCount : turnCount // ignore: cast_nullable_to_non_nullable
 as int,totalMoves: null == totalMoves ? _self.totalMoves : totalMoves // ignore: cast_nullable_to_non_nullable
 as int,endTime: freezed == endTime ? _self.endTime : endTime // ignore: cast_nullable_to_non_nullable
@@ -176,10 +178,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<List<Cell>> grid,  List<Player> players,  DateTime startTime,  List<FlyingAtom> flyingAtoms,  int currentPlayerIndex,  bool isGameOver,  Player? winner,  bool isProcessing,  int turnCount,  int totalMoves,  DateTime? endTime)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<List<Cell>> grid,  List<Player> players,  DateTime startTime,  List<FlyingAtom> flyingAtoms,  int currentPlayerIndex,  bool isGameOver,  Player? winner,  bool isProcessing,  bool isTrainingMode,  int turnCount,  int totalMoves,  DateTime? endTime)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _GameState() when $default != null:
-return $default(_that.grid,_that.players,_that.startTime,_that.flyingAtoms,_that.currentPlayerIndex,_that.isGameOver,_that.winner,_that.isProcessing,_that.turnCount,_that.totalMoves,_that.endTime);case _:
+return $default(_that.grid,_that.players,_that.startTime,_that.flyingAtoms,_that.currentPlayerIndex,_that.isGameOver,_that.winner,_that.isProcessing,_that.isTrainingMode,_that.turnCount,_that.totalMoves,_that.endTime);case _:
   return orElse();
 
 }
@@ -197,10 +199,10 @@ return $default(_that.grid,_that.players,_that.startTime,_that.flyingAtoms,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<List<Cell>> grid,  List<Player> players,  DateTime startTime,  List<FlyingAtom> flyingAtoms,  int currentPlayerIndex,  bool isGameOver,  Player? winner,  bool isProcessing,  int turnCount,  int totalMoves,  DateTime? endTime)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<List<Cell>> grid,  List<Player> players,  DateTime startTime,  List<FlyingAtom> flyingAtoms,  int currentPlayerIndex,  bool isGameOver,  Player? winner,  bool isProcessing,  bool isTrainingMode,  int turnCount,  int totalMoves,  DateTime? endTime)  $default,) {final _that = this;
 switch (_that) {
 case _GameState():
-return $default(_that.grid,_that.players,_that.startTime,_that.flyingAtoms,_that.currentPlayerIndex,_that.isGameOver,_that.winner,_that.isProcessing,_that.turnCount,_that.totalMoves,_that.endTime);case _:
+return $default(_that.grid,_that.players,_that.startTime,_that.flyingAtoms,_that.currentPlayerIndex,_that.isGameOver,_that.winner,_that.isProcessing,_that.isTrainingMode,_that.turnCount,_that.totalMoves,_that.endTime);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -217,10 +219,10 @@ return $default(_that.grid,_that.players,_that.startTime,_that.flyingAtoms,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<List<Cell>> grid,  List<Player> players,  DateTime startTime,  List<FlyingAtom> flyingAtoms,  int currentPlayerIndex,  bool isGameOver,  Player? winner,  bool isProcessing,  int turnCount,  int totalMoves,  DateTime? endTime)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<List<Cell>> grid,  List<Player> players,  DateTime startTime,  List<FlyingAtom> flyingAtoms,  int currentPlayerIndex,  bool isGameOver,  Player? winner,  bool isProcessing,  bool isTrainingMode,  int turnCount,  int totalMoves,  DateTime? endTime)?  $default,) {final _that = this;
 switch (_that) {
 case _GameState() when $default != null:
-return $default(_that.grid,_that.players,_that.startTime,_that.flyingAtoms,_that.currentPlayerIndex,_that.isGameOver,_that.winner,_that.isProcessing,_that.turnCount,_that.totalMoves,_that.endTime);case _:
+return $default(_that.grid,_that.players,_that.startTime,_that.flyingAtoms,_that.currentPlayerIndex,_that.isGameOver,_that.winner,_that.isProcessing,_that.isTrainingMode,_that.turnCount,_that.totalMoves,_that.endTime);case _:
   return null;
 
 }
@@ -232,7 +234,7 @@ return $default(_that.grid,_that.players,_that.startTime,_that.flyingAtoms,_that
 @JsonSerializable()
 
 class _GameState extends GameState {
-   _GameState({required final  List<List<Cell>> grid, required final  List<Player> players, required this.startTime, final  List<FlyingAtom> flyingAtoms = const [], this.currentPlayerIndex = 0, this.isGameOver = false, this.winner, this.isProcessing = false, this.turnCount = 0, this.totalMoves = 0, this.endTime}): assert(grid.isNotEmpty, 'Grid cannot be empty'),assert(players.isNotEmpty, 'Players list cannot be empty'),assert(currentPlayerIndex >= 0 && currentPlayerIndex < players.length, 'Current player index must be valid'),_grid = grid,_players = players,_flyingAtoms = flyingAtoms,super._();
+   _GameState({required final  List<List<Cell>> grid, required final  List<Player> players, required this.startTime, final  List<FlyingAtom> flyingAtoms = const [], this.currentPlayerIndex = 0, this.isGameOver = false, this.winner, this.isProcessing = false, this.isTrainingMode = false, this.turnCount = 0, this.totalMoves = 0, this.endTime}): assert(grid.isNotEmpty, 'Grid cannot be empty'),assert(players.isNotEmpty, 'Players list cannot be empty'),assert(currentPlayerIndex >= 0 && currentPlayerIndex < players.length, 'Current player index must be valid'),_grid = grid,_players = players,_flyingAtoms = flyingAtoms,super._();
   factory _GameState.fromJson(Map<String, dynamic> json) => _$GameStateFromJson(json);
 
  final  List<List<Cell>> _grid;
@@ -263,6 +265,8 @@ class _GameState extends GameState {
 @override final  Player? winner;
 /// Flag to block input during chain explosions.
 @override@JsonKey() final  bool isProcessing;
+/// Enables training suggestions for human turns.
+@override@JsonKey() final  bool isTrainingMode;
 /// Number of turns elapsed.
 @override@JsonKey() final  int turnCount;
 /// Total number of moves made by all players.
@@ -283,12 +287,12 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GameState&&const DeepCollectionEquality().equals(other._grid, _grid)&&const DeepCollectionEquality().equals(other._players, _players)&&(identical(other.startTime, startTime) || other.startTime == startTime)&&const DeepCollectionEquality().equals(other._flyingAtoms, _flyingAtoms)&&(identical(other.currentPlayerIndex, currentPlayerIndex) || other.currentPlayerIndex == currentPlayerIndex)&&(identical(other.isGameOver, isGameOver) || other.isGameOver == isGameOver)&&(identical(other.winner, winner) || other.winner == winner)&&(identical(other.isProcessing, isProcessing) || other.isProcessing == isProcessing)&&(identical(other.turnCount, turnCount) || other.turnCount == turnCount)&&(identical(other.totalMoves, totalMoves) || other.totalMoves == totalMoves)&&(identical(other.endTime, endTime) || other.endTime == endTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GameState&&const DeepCollectionEquality().equals(other._grid, _grid)&&const DeepCollectionEquality().equals(other._players, _players)&&(identical(other.startTime, startTime) || other.startTime == startTime)&&const DeepCollectionEquality().equals(other._flyingAtoms, _flyingAtoms)&&(identical(other.currentPlayerIndex, currentPlayerIndex) || other.currentPlayerIndex == currentPlayerIndex)&&(identical(other.isGameOver, isGameOver) || other.isGameOver == isGameOver)&&(identical(other.winner, winner) || other.winner == winner)&&(identical(other.isProcessing, isProcessing) || other.isProcessing == isProcessing)&&(identical(other.isTrainingMode, isTrainingMode) || other.isTrainingMode == isTrainingMode)&&(identical(other.turnCount, turnCount) || other.turnCount == turnCount)&&(identical(other.totalMoves, totalMoves) || other.totalMoves == totalMoves)&&(identical(other.endTime, endTime) || other.endTime == endTime));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_grid),const DeepCollectionEquality().hash(_players),startTime,const DeepCollectionEquality().hash(_flyingAtoms),currentPlayerIndex,isGameOver,winner,isProcessing,turnCount,totalMoves,endTime);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_grid),const DeepCollectionEquality().hash(_players),startTime,const DeepCollectionEquality().hash(_flyingAtoms),currentPlayerIndex,isGameOver,winner,isProcessing,isTrainingMode,turnCount,totalMoves,endTime);
 
 
 
@@ -299,7 +303,7 @@ abstract mixin class _$GameStateCopyWith<$Res> implements $GameStateCopyWith<$Re
   factory _$GameStateCopyWith(_GameState value, $Res Function(_GameState) _then) = __$GameStateCopyWithImpl;
 @override @useResult
 $Res call({
- List<List<Cell>> grid, List<Player> players, DateTime startTime, List<FlyingAtom> flyingAtoms, int currentPlayerIndex, bool isGameOver, Player? winner, bool isProcessing, int turnCount, int totalMoves, DateTime? endTime
+ List<List<Cell>> grid, List<Player> players, DateTime startTime, List<FlyingAtom> flyingAtoms, int currentPlayerIndex, bool isGameOver, Player? winner, bool isProcessing, bool isTrainingMode, int turnCount, int totalMoves, DateTime? endTime
 });
 
 
@@ -316,7 +320,7 @@ class __$GameStateCopyWithImpl<$Res>
 
 /// Create a copy of GameState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? grid = null,Object? players = null,Object? startTime = null,Object? flyingAtoms = null,Object? currentPlayerIndex = null,Object? isGameOver = null,Object? winner = freezed,Object? isProcessing = null,Object? turnCount = null,Object? totalMoves = null,Object? endTime = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? grid = null,Object? players = null,Object? startTime = null,Object? flyingAtoms = null,Object? currentPlayerIndex = null,Object? isGameOver = null,Object? winner = freezed,Object? isProcessing = null,Object? isTrainingMode = null,Object? turnCount = null,Object? totalMoves = null,Object? endTime = freezed,}) {
   return _then(_GameState(
 grid: null == grid ? _self._grid : grid // ignore: cast_nullable_to_non_nullable
 as List<List<Cell>>,players: null == players ? _self._players : players // ignore: cast_nullable_to_non_nullable
@@ -326,6 +330,7 @@ as List<FlyingAtom>,currentPlayerIndex: null == currentPlayerIndex ? _self.curre
 as int,isGameOver: null == isGameOver ? _self.isGameOver : isGameOver // ignore: cast_nullable_to_non_nullable
 as bool,winner: freezed == winner ? _self.winner : winner // ignore: cast_nullable_to_non_nullable
 as Player?,isProcessing: null == isProcessing ? _self.isProcessing : isProcessing // ignore: cast_nullable_to_non_nullable
+as bool,isTrainingMode: null == isTrainingMode ? _self.isTrainingMode : isTrainingMode // ignore: cast_nullable_to_non_nullable
 as bool,turnCount: null == turnCount ? _self.turnCount : turnCount // ignore: cast_nullable_to_non_nullable
 as int,totalMoves: null == totalMoves ? _self.totalMoves : totalMoves // ignore: cast_nullable_to_non_nullable
 as int,endTime: freezed == endTime ? _self.endTime : endTime // ignore: cast_nullable_to_non_nullable

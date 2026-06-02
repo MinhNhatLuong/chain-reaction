@@ -185,6 +185,7 @@ class GameRules {
     int? rows,
     int? cols,
     DateTime? startTime,
+    bool isTrainingMode = false,
   }) {
     var r = rows ?? 10;
     var c = cols ?? 6;
@@ -202,6 +203,7 @@ class GameRules {
       grid: grid,
       players: players,
       startTime: startTime ?? DateTime.now(),
+      isTrainingMode: isTrainingMode,
     );
   }
 

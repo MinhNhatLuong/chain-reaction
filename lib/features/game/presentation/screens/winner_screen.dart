@@ -21,6 +21,7 @@ class WinnerScreen extends ConsumerWidget {
     this.gameDuration = '00:00',
     this.territoryPercentage = 100,
     this.aiDifficulty,
+    this.isTrainingMode = false,
   });
   final int winnerPlayerIndex;
   final String? winnerName;
@@ -30,6 +31,7 @@ class WinnerScreen extends ConsumerWidget {
   final int playerCount;
   final String gridSize;
   final AIDifficulty? aiDifficulty;
+  final bool isTrainingMode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -136,6 +138,7 @@ class WinnerScreen extends ConsumerWidget {
                                 'playerCount': playerCount,
                                 'gridSize': gridSize,
                                 'aiDifficulty': aiDifficulty,
+                                'isTrainingMode': isTrainingMode,
                               },
                             );
                           },

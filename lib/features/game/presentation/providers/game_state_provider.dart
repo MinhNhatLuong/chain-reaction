@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'dart:developer';
+import 'dart:developer' as developer;
+import 'dart:math' show Point;
 
 import 'package:chain_reaction/core/errors/domain_exceptions.dart';
 import 'package:chain_reaction/core/services/haptic/haptic_service.dart';
@@ -9,9 +10,30 @@ import 'package:chain_reaction/features/game/domain/domain.dart';
 import 'package:chain_reaction/features/game/domain/logic/game_rules.dart';
 import 'package:chain_reaction/features/game/domain/repositories/game_repository.dart';
 import 'package:chain_reaction/features/game/presentation/providers/game_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'game_state_provider.g.dart';
+
+final trainingSuggestedMoveProvider =
+    NotifierProvider<TrainingSuggestedMoveNotifier, Point<int>?>(
+      TrainingSuggestedMoveNotifier.new,
+    );
+
+class TrainingSuggestedMoveNotifier extends Notifier<Point<int>?> {
+  @override
+  Point<int>? build() => null;
+
+  Point<int>? get move => state;
+
+  set move(Point<int>? move) {
+    state = move;
+  }
+
+  void clear() {
+    state = null;
+  }
+}
 
 /// Notifier for managing game state.
 @riverpod
@@ -24,6 +46,7 @@ class GameNotifier extends _$GameNotifier {
 
   StreamSubscription<GameState>? _explosionSubscription;
   final List<GameState> _history = [];
+  int _trainingHintRequestId = 0;
 
   @override
   GameState? build() {
@@ -33,7 +56,10 @@ class GameNotifier extends _$GameNotifier {
     _gameRepository = ref.watch(gameRepositoryProvider);
     _hapticService = ref.watch(hapticServiceProvider);
 
-    ref.onDispose(_cancelExplosions);
+    ref.onDispose(() {
+      _trainingHintRequestId++;
+      _cancelExplosions();
+    });
 
     return null;
   }
@@ -43,17 +69,29 @@ class GameNotifier extends _$GameNotifier {
     final savedState = await _gameRepository.loadGame();
     if (savedState != null) {
       state = savedState;
+      _clearTrainingHint();
+      _requestTrainingHintIfNeeded();
       return true;
     }
     return false;
   }
 
   /// Initializes a new game with the given players and grid size.
-  void initGame(List<Player> players, {String? gridSize}) {
+  void initGame(
+    List<Player> players, {
+    String? gridSize,
+    bool isTrainingMode = false,
+  }) {
     _cancelExplosions();
     _history.clear();
-    state = _gameRules.initializeGame(players, gridSize: gridSize);
+    _clearTrainingHint();
+    state = _gameRules.initializeGame(
+      players,
+      gridSize: gridSize,
+      isTrainingMode: isTrainingMode,
+    );
     unawaited(_saveGame());
+    _requestTrainingHintIfNeeded();
   }
 
   /// Places an atom at the given coordinates.
@@ -61,6 +99,7 @@ class GameNotifier extends _$GameNotifier {
     final currentState = state;
     if (currentState == null) return;
 
+    _clearTrainingHint();
     _history.add(currentState);
     if (_history.length > 50) {
       _history.removeAt(0);
@@ -120,6 +159,7 @@ class GameNotifier extends _$GameNotifier {
 
     // Pop the last state from history
     final previousState = _history.removeLast();
+    _clearTrainingHint();
     state = previousState.copyWith(isProcessing: false);
     unawaited(_saveGame());
 
@@ -127,6 +167,8 @@ class GameNotifier extends _$GameNotifier {
     // (unless history is now empty, in which case we start over or stay at AI start)
     if (previousState.currentPlayer.isAI && _history.isNotEmpty) {
       undo();
+    } else {
+      _requestTrainingHintIfNeeded();
     }
   }
 
@@ -141,6 +183,7 @@ class GameNotifier extends _$GameNotifier {
     if (!currentPlayer.isAI) return;
 
     // Set processing to true to block UI
+    _clearTrainingHint();
     state = currentState.copyWith(isProcessing: true);
 
     try {
@@ -158,7 +201,7 @@ class GameNotifier extends _$GameNotifier {
     } on DomainException catch (e) {
       // Known domain failure (e.g. AI logic error).
       // Log it in real app. For now, we behave resiliently by skipping turn.
-      log('AI Error: $e');
+      developer.log('AI Error: $e');
       _advanceTurn();
     } on Object {
       // On unexpected error, skip AI turn to prevent stuck state
@@ -188,6 +231,8 @@ class GameNotifier extends _$GameNotifier {
       // If no winner, check if next player is AI
       if (state!.currentPlayer.isAI) {
         unawaited(_processAIMove());
+      } else {
+        _requestTrainingHintIfNeeded();
       }
     }
   }
@@ -212,6 +257,7 @@ class GameNotifier extends _$GameNotifier {
   void resetGame() {
     _cancelExplosions();
     _history.clear();
+    _clearTrainingHint();
     state = null;
     unawaited(_gameRepository.clearGame());
   }
@@ -220,6 +266,66 @@ class GameNotifier extends _$GameNotifier {
     // Only cancel subscription, do not nullify state logic blindly
     unawaited(_explosionSubscription?.cancel());
     _explosionSubscription = null;
+  }
+
+  void _clearTrainingHint() {
+    _trainingHintRequestId++;
+    ref.read(trainingSuggestedMoveProvider.notifier).clear();
+  }
+
+  void _requestTrainingHintIfNeeded() {
+    final snapshot = state;
+    if (snapshot == null ||
+        !snapshot.isTrainingMode ||
+        snapshot.isGameOver ||
+        snapshot.isProcessing ||
+        snapshot.currentPlayer.isAI) {
+      return;
+    }
+
+    final requestId = ++_trainingHintRequestId;
+    final snapshotPlayerId = snapshot.currentPlayer.id;
+    final snapshotTurnCount = snapshot.turnCount;
+    final snapshotTotalMoves = snapshot.totalMoves;
+    final coachPlayer = snapshot.currentPlayer.copyWith(
+      difficulty: AIDifficulty.god,
+    );
+
+    unawaited(
+      _aiService
+          .getMove(snapshot, coachPlayer)
+          .then((move) {
+            if (!ref.mounted) return;
+
+            final latest = state;
+            if (requestId != _trainingHintRequestId ||
+                latest == null ||
+                !latest.isTrainingMode ||
+                latest.isGameOver ||
+                latest.isProcessing ||
+                latest.currentPlayer.isAI ||
+                latest.currentPlayer.id != snapshotPlayerId ||
+                latest.turnCount != snapshotTurnCount ||
+                latest.totalMoves != snapshotTotalMoves ||
+                !MoveValidator.isValidMove(
+                  latest,
+                  move.x,
+                  move.y,
+                  checkProcessing: false,
+                )) {
+              return;
+            }
+
+            ref.read(trainingSuggestedMoveProvider.notifier).move = move;
+          })
+          .catchError((Object error) {
+            if (!ref.mounted) return;
+
+            if (requestId == _trainingHintRequestId) {
+              ref.read(trainingSuggestedMoveProvider.notifier).clear();
+            }
+          }),
+    );
   }
 }
 

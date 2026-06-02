@@ -29,6 +29,7 @@ _GameState _$GameStateFromJson(Map<String, dynamic> json) => _GameState(
       ? null
       : Player.fromJson(json['winner'] as Map<String, dynamic>),
   isProcessing: json['isProcessing'] as bool? ?? false,
+  isTrainingMode: json['isTrainingMode'] as bool? ?? false,
   turnCount: (json['turnCount'] as num?)?.toInt() ?? 0,
   totalMoves: (json['totalMoves'] as num?)?.toInt() ?? 0,
   endTime: json['endTime'] == null
@@ -46,6 +47,7 @@ Map<String, dynamic> _$GameStateToJson(_GameState instance) =>
       'isGameOver': instance.isGameOver,
       'winner': instance.winner,
       'isProcessing': instance.isProcessing,
+      'isTrainingMode': instance.isTrainingMode,
       'turnCount': instance.turnCount,
       'totalMoves': instance.totalMoves,
       'endTime': instance.endTime?.toIso8601String(),

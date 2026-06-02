@@ -18,16 +18,16 @@ class HomeConfiguration extends ConsumerWidget {
     final state = ref.watch(homeProvider);
     final notifier = ref.read(homeProvider.notifier);
     final l10n = AppLocalizations.of(context)!;
-    final isVsComputer = state.selectedMode == GameMode.vsComputer;
+    final isAiGame = state.isVsComputer || state.isTraining;
 
     return Column(
       key: const ValueKey('Configuration'),
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (isVsComputer)
+        if (state.isVsComputer || state.isTraining)
           GameSelector(
-            label: 'DIFFICULTY',
+            label: state.isTraining ? 'COMPUTER' : 'DIFFICULTY',
             value: state.difficultyLabel,
             onPrevious: () => notifier.cycleDifficulty(forward: false),
             onNext: () => notifier.cycleDifficulty(forward: true),
@@ -50,14 +50,15 @@ class HomeConfiguration extends ConsumerWidget {
         PillButton(
           text: l10n.startGame,
           onTap: () {
-            final players = isVsComputer ? 2 : state.playerCount;
+            final players = isAiGame ? 2 : state.playerCount;
             unawaited(
               context.pushNamed(
                 AppRouteNames.game,
                 extra: {
                   'playerCount': players,
                   'gridSize': state.currentGridSize,
-                  'aiDifficulty': isVsComputer ? state.aiDifficulty : null,
+                  'aiDifficulty': isAiGame ? state.aiDifficulty : null,
+                  'isTrainingMode': state.isTraining,
                 },
               ),
             );

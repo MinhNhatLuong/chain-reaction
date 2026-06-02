@@ -32,6 +32,11 @@ class ScopedCellWidget extends ConsumerWidget {
     final cell = ref.watch(
       gridProvider.select((grid) => grid?[row][col]),
     );
+    final isSuggestedMove = ref.watch(
+      trainingSuggestedMoveProvider.select(
+        (move) => move != null && move.x == col && move.y == row,
+      ),
+    );
 
     // If grid is null (e.g. game reset), render nothing or placeholder
     if (cell == null) return const SizedBox();
@@ -76,6 +81,7 @@ class ScopedCellWidget extends ConsumerWidget {
       animation: animation,
       angleOffset: angleOffset,
       isKeyboardSelected: isKeyboardSelected,
+      isSuggestedMove: isSuggestedMove,
       semanticLabel: semanticLabel,
       semanticHint: 'Double tap to place an orb.',
     );

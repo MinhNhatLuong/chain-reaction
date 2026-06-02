@@ -7,7 +7,7 @@ part 'home_provider.g.dart';
 
 enum HomeStep { modeSelection, configuration }
 
-enum GameMode { localMultiplayer, vsComputer }
+enum GameMode { localMultiplayer, vsComputer, training }
 
 @freezed
 abstract class HomeState with _$HomeState {
@@ -35,6 +35,10 @@ abstract class HomeState with _$HomeState {
   String get currentGridSize => gridSizes[gridSizeIndex];
 
   String get difficultyLabel => aiDifficulty.label;
+
+  bool get isVsComputer => selectedMode == GameMode.vsComputer;
+
+  bool get isTraining => selectedMode == GameMode.training;
 }
 
 @riverpod
@@ -49,10 +53,19 @@ class HomeNotifier extends _$HomeNotifier {
   }
 
   void toggleMode() {
-    final newMode = state.selectedMode == GameMode.localMultiplayer
-        ? GameMode.vsComputer
-        : GameMode.localMultiplayer;
+    const values = GameMode.values;
+    final currentIndex = values.indexOf(state.selectedMode);
+    final newMode = values[(currentIndex + 1) % values.length];
     state = state.copyWith(selectedMode: newMode);
+  }
+
+  void cycleMode({required bool forward}) {
+    const values = GameMode.values;
+    final currentIndex = values.indexOf(state.selectedMode);
+    final nextIndex = forward
+        ? (currentIndex + 1) % values.length
+        : (currentIndex - 1 + values.length) % values.length;
+    state = state.copyWith(selectedMode: values[nextIndex]);
   }
 
   void incrementPlayers() {

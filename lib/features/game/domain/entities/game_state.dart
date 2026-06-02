@@ -31,6 +31,9 @@ abstract class GameState with _$GameState {
     /// Flag to block input during chain explosions.
     @Default(false) bool isProcessing,
 
+    /// Enables training suggestions for human turns.
+    @Default(false) bool isTrainingMode,
+
     /// Number of turns elapsed.
     @Default(0) int turnCount,
 

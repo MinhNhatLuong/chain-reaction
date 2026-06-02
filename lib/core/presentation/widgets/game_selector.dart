@@ -10,11 +10,13 @@ class GameSelector extends ConsumerWidget {
     required this.onPrevious,
     required this.onNext,
     super.key,
+    this.isReadOnly = false,
   });
   final String label;
   final String value;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
+  final bool isReadOnly;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,7 +40,7 @@ class GameSelector extends ConsumerWidget {
           children: [
             _ArrowButton(
               icon: Icons.chevron_left,
-              onTap: onPrevious,
+              onTap: isReadOnly ? null : onPrevious,
               color: theme.fg,
             ),
             Expanded(
@@ -55,7 +57,7 @@ class GameSelector extends ConsumerWidget {
             ),
             _ArrowButton(
               icon: Icons.chevron_right,
-              onTap: onNext,
+              onTap: isReadOnly ? null : onNext,
               color: theme.fg,
             ),
           ],
@@ -68,18 +70,22 @@ class GameSelector extends ConsumerWidget {
 class _ArrowButton extends StatelessWidget {
   const _ArrowButton({
     required this.icon,
-    required this.onTap,
     required this.color,
+    this.onTap,
   });
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: onTap,
-      icon: Icon(icon, color: color.withValues(alpha: 0.6), size: 28),
+      icon: Icon(
+        icon,
+        color: color.withValues(alpha: onTap == null ? 0.18 : 0.6),
+        size: 28,
+      ),
       splashRadius: 24,
     );
   }
