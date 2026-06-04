@@ -93,6 +93,11 @@ class FakeGameRepository implements GameRepository {
 
 class MockAIService implements AIService {
   @override
+  Future<Point<int>> getCoachingMove(GameState state, Player player) async {
+    return const Point(0, 0);
+  }
+
+  @override
   Future<Point<int>> getMove(GameState state, dynamic player) async {
     return const Point(0, 0);
   }
