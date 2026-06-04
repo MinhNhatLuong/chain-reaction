@@ -114,6 +114,18 @@ class FakeAIService implements AIService {
   AIDifficulty? lastHintDifficulty;
 
   @override
+  Future<Point<int>> getCoachingMove(GameState state, Player player) async {
+    if (delay > Duration.zero) {
+      await Future<void>.delayed(delay);
+    }
+    if (shouldFail) {
+      throw const AIException('Simulated AI Failure');
+    }
+    lastHintDifficulty = player.difficulty;
+    return hintMove;
+  }
+
+  @override
   Future<Point<int>> getMove(GameState state, Player player) async {
     if (delay > Duration.zero) {
       await Future<void>.delayed(delay);

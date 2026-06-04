@@ -12,11 +12,18 @@ import 'package:chain_reaction/features/game/domain/logic/game_rules.dart';
 /// Uses depth-limited minimax with alpha-beta pruning and deterministic
 /// move ordering for high tactical strength.
 class GodStrategy extends AIStrategy {
-  GodStrategy(this._rules);
+  GodStrategy(
+    this._rules, {
+    int maxDepth = 3,
+    int crowdedDepth = 2,
+  }) : _maxDepth = maxDepth,
+       _crowdedDepth = crowdedDepth;
+
   final GameRules _rules;
+  final int _maxDepth;
+  final int _crowdedDepth;
 
   static const double _winScore = 100000;
-  static const int _maxDepth = 3;
 
   @override
   Future<Point<int>> getMove(
@@ -84,7 +91,7 @@ class GodStrategy extends AIStrategy {
     // Adaptive depth keeps "God" strong without pathological slow turns.
     if (moveCount <= 10) return _maxDepth;
     if (moveCount <= 20) return _maxDepth;
-    return 2;
+    return _crowdedDepth;
   }
 
   double _search({

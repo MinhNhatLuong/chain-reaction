@@ -56,3 +56,4 @@ app.*.map.json
 /android/**/*.keystore
 
 debug_algorithm
+kaggle_upload/

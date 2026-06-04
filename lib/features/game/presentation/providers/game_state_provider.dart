@@ -293,7 +293,7 @@ class GameNotifier extends _$GameNotifier {
 
     unawaited(
       _aiService
-          .getMove(snapshot, coachPlayer)
+          .getCoachingMove(snapshot, coachPlayer)
           .then((move) {
             if (!ref.mounted) return;
 

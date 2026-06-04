@@ -14,11 +14,19 @@ import 'package:chain_reaction/features/game/domain/logic/game_rules.dart';
 import 'package:flutter/foundation.dart';
 
 class AIComputeParams {
-  AIComputeParams(this.state, this.player, this.rules, this.seed);
+  AIComputeParams(
+    this.state,
+    this.player,
+    this.rules,
+    this.seed, {
+    this.useCoachingDepth = false,
+  });
+
   final GameState state;
   final Player player;
   final GameRules rules;
   final int seed;
+  final bool useCoachingDepth;
 }
 
 Future<Point<int>> _computeMove(AIComputeParams params) async {
@@ -33,7 +41,9 @@ Future<Point<int>> _computeMove(AIComputeParams params) async {
     case AIDifficulty.extreme:
       strategy = ExtremeStrategy(params.rules);
     case AIDifficulty.god:
-      strategy = GodStrategy(params.rules);
+      strategy = params.useCoachingDepth
+          ? GodStrategy(params.rules, maxDepth: 4)
+          : GodStrategy(params.rules);
     case AIDifficulty.oracle:
       strategy = OracleStrategy(params.rules);
     case null:
@@ -67,6 +77,18 @@ class AIService {
   final GameRules _rules;
 
   Future<Point<int>> getMove(GameState state, Player player) async {
+    return _getMove(state, player);
+  }
+
+  Future<Point<int>> getCoachingMove(GameState state, Player player) async {
+    return _getMove(state, player, useCoachingDepth: true);
+  }
+
+  Future<Point<int>> _getMove(
+    GameState state,
+    Player player, {
+    bool useCoachingDepth = false,
+  }) async {
     // Safety check: verify game is not over
     if (state.isGameOver) return const Point(0, 0);
 
@@ -82,7 +104,13 @@ class AIService {
     try {
       return await compute(
         _computeMove,
-        AIComputeParams(state, player, _rules, seed),
+        AIComputeParams(
+          state,
+          player,
+          _rules,
+          seed,
+          useCoachingDepth: useCoachingDepth,
+        ),
       );
     } on Object catch (e) {
       // Wrap isolate errors
