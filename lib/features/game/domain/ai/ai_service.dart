@@ -42,7 +42,7 @@ Future<Point<int>> _computeMove(AIComputeParams params) async {
       strategy = ExtremeStrategy(params.rules);
     case AIDifficulty.god:
       strategy = params.useCoachingDepth
-          ? GodStrategy(params.rules, maxDepth: 4)
+          ? GodStrategy(params.rules, maxDepth: 6)
           : GodStrategy(params.rules);
     case AIDifficulty.oracle:
       strategy = OracleStrategy(params.rules);
