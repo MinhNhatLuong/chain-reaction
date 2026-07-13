@@ -57,3 +57,5 @@ app.*.map.json
 
 debug_algorithm
 kaggle_upload/
+
+.vscode
