@@ -5,7 +5,6 @@ import 'package:chain_reaction/features/game/domain/ai/ai_strategy.dart';
 import 'package:chain_reaction/features/game/domain/ai/strategies/extreme_strategy.dart';
 import 'package:chain_reaction/features/game/domain/ai/strategies/god_strategy.dart';
 import 'package:chain_reaction/features/game/domain/ai/strategies/greedy_strategy.dart';
-import 'package:chain_reaction/features/game/domain/ai/strategies/oracle_strategy.dart';
 import 'package:chain_reaction/features/game/domain/ai/strategies/random_strategy.dart';
 import 'package:chain_reaction/features/game/domain/ai/strategies/strategic_strategy.dart';
 import 'package:chain_reaction/features/game/domain/entities/game_state.dart';
@@ -44,8 +43,6 @@ Future<Point<int>> _computeMove(AIComputeParams params) async {
       strategy = params.useCoachingDepth
           ? GodStrategy(params.rules, maxDepth: 6)
           : GodStrategy(params.rules);
-    case AIDifficulty.oracle:
-      strategy = OracleStrategy(params.rules);
     case null:
       strategy = GreedyStrategy();
     // default handled by exhaustive enum switch

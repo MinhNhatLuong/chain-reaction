@@ -8,9 +8,7 @@ part 'player.g.dart';
 enum PlayerType { human, ai }
 
 /// Difficulty levels for AI players
-enum AIDifficulty { easy, medium, hard, extreme, god, oracle }
-
-const oracleDifficultyDisplayName = 'HuyNX';
+enum AIDifficulty { easy, medium, hard, extreme, god }
 
 extension AIDifficultyPresentation on AIDifficulty {
   String get label {
@@ -25,8 +23,6 @@ extension AIDifficultyPresentation on AIDifficulty {
         return 'Extreme';
       case AIDifficulty.god:
         return 'God';
-      case AIDifficulty.oracle:
-        return oracleDifficultyDisplayName;
     }
   }
 }
