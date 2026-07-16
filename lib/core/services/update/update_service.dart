@@ -30,11 +30,17 @@ class UpdateService {
 
   Future<UpdateAvailability?> checkForUpdate() async {
     final currentBuild = await currentBuildNumber();
+    final url = _latestReleaseUri.replace(
+      queryParameters: {
+        't': DateTime.now().millisecondsSinceEpoch.toString(),
+      },
+    );
     final response = await _client.get(
-      _latestReleaseUri,
+      url,
       headers: const {
         'Accept': 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
+        'Cache-Control': 'no-cache',
       },
     );
 

@@ -42,6 +42,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   json_serializable: ^6.11.2
+  path_provider_platform_interface: ^2.1.2
+  plugin_platform_interface: ^2.1.8
   riverpod_generator: ^3.0.3
   very_good_analysis: ^10.0.0
 

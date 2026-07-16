@@ -213,6 +213,31 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
 
   String _messageFor(Object error) {
     if (error is UpdateException) return error.message;
-    return 'Update failed: $error';
+
+    final errorStr = error.toString().toLowerCase();
+    if (errorStr.contains('socketexception') ||
+        errorStr.contains('failed host lookup') ||
+        errorStr.contains('network is unreachable')) {
+      return 'No internet connection. Please check your Wi-Fi or mobile data.';
+    }
+    if (errorStr.contains('clientexception') ||
+        errorStr.contains('connection closed') ||
+        errorStr.contains('connection reset') ||
+        errorStr.contains('connection failed')) {
+      return 'Network connection lost. Please try again.';
+    }
+    if (errorStr.contains('handshakeexception') ||
+        errorStr.contains('certificatedatedinvalid')) {
+      return 'Secure connection failed. Please check your device date and time settings.';
+    }
+    if (errorStr.contains('timeoutexception')) {
+      return 'Connection timed out. Please try again later.';
+    }
+
+    final firstLine = error.toString().split('\n').first;
+    if (firstLine.length > 100) {
+      return 'Update failed: ${firstLine.substring(0, 97)}...';
+    }
+    return 'Update failed: $firstLine';
   }
 }
